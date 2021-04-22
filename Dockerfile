@@ -1,9 +1,9 @@
 # renovate: datasource=npm depName=renovate versioning=npm
-ARG RENOVATE_VERSION=24.32.2
+ARG RENOVATE_VERSION=24.119.11
 
 # Base image
 #============
-FROM renovate/buildpack:2@sha256:651ea802070602dfb15fee6aeec716932d47e92712a0896878b9a5b1c9f56876 AS base
+FROM renovate/buildpack:5@sha256:7d82f011ac21f564778ff9a213a641a9dd8d9a16e5c9dbaf9a4379487bdc8c12 AS base
 
 LABEL name="renovate"
 LABEL org.opencontainers.image.source="https://github.com/renovatebot/renovate" \
@@ -11,10 +11,12 @@ LABEL org.opencontainers.image.source="https://github.com/renovatebot/renovate" 
   org.opencontainers.image.licenses="AGPL-3.0-only"
 
 # renovate: datasource=docker versioning=docker
-RUN install-tool node 14.15.4
+RUN install-tool node 14.16.1
 
 # renovate: datasource=npm versioning=npm
 RUN install-tool yarn 1.22.10
+
+WORKDIR /usr/src/app
 
 # Build image
 #============
@@ -27,7 +29,7 @@ RUN npm install -g yarn-deduplicate
 COPY package.json .
 COPY yarn.lock .
 
-RUN yarn install --frozen-lockfile --link-duplicates
+RUN yarn install --frozen-lockfile
 
 COPY tsconfig.json .
 COPY tsconfig.app.json .
@@ -38,9 +40,9 @@ RUN set -ex; \
   chmod +x dist/*.js;
 
 ARG RENOVATE_VERSION
-RUN yarn add renovate@${RENOVATE_VERSION} --link-duplicates
+RUN yarn add renovate@${RENOVATE_VERSION}
 RUN yarn-deduplicate --strategy highest
-RUN yarn install --frozen-lockfile --link-duplicates --production
+RUN yarn install --frozen-lockfile --production
 
 # check is re2 is usable
 RUN node -e "new require('re2')('.*').exec('test')"
@@ -59,7 +61,7 @@ RUN node -e "new require('re2')('.*').exec('test')"
 FROM base as final
 
 # renovate: datasource=docker versioning=docker
-RUN install-tool docker 19.03.14
+RUN install-tool docker 20.10.6
 
 ENV RENOVATE_BINARY_SOURCE=docker
 
